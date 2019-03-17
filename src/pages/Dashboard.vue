@@ -5,12 +5,13 @@
       <div class="visualization">
         <d3-network :net-nodes="nodes" :net-links="links" :options="options" @node-click="clicky"></d3-network>
       </div>
-      <panel/>
+      <panel :metadata="panelData"/>
     </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios'
 import Panel from "../components/Panel.vue";
 import Toolbar from "../components/Toolbar.vue";
 import D3Network from "vue-d3-network";
@@ -26,6 +27,8 @@ export default {
   },
   data() {
     return {
+      clickyTimeout: null,
+      panelData: {},
       nodeMap: {},
       nodes: [],
       links: [],
@@ -42,40 +45,58 @@ export default {
   },
   methods: {
     clicky(e, node) {
-      console.log(node);
+      if (this.clickyTimeout != null) {
+        clearTimeout(this.clickyTimeout);
+        this.clickyTimeout = null;
+        this.expandNode(node);
+        this.getNodeData(node);
+      } else {
+        this.clickyTimeout = setTimeout(() => {
+          this.getNodeData(node);
+          clearTimeout(this.clickyTimeout);
+          this.clickyTimeout = null;
+        }, 500);
+      }
+    },
+    getNodeData(node) {
       let id = node.name.split(" ")[1];
-      console.log(id);
+      this.queryMetaData(id);
+    },
+    expandNode(node) {
+      let id = node.name.split(" ")[1];
 
       if (node._color !== "red") {
         this.queryNode(id);
       }
       node._color = "red";
     },
-    queryNode(id) {
-      this.getRequest(
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?		dbfrom=pmc&linkname=pmc_refs_pubmed&id=" +
+    queryMetaData(id) {
+      axios.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pmc&id=" +
           id +
-          "&tool=my_tool&email=my_email@example.com", // demo-only URL
-        this.addNodes,
-        console.log
-      );
+          "&retmode=json",
+      ).then(this.parseMetaData)
+      .catch(console.error);
     },
-    addNodes(xml) {
-      let x2js = new X2JS();
-      let data = x2js.xml_str2json(xml);
-      console.log(data);
-      let rootLink = data.eLinkResult.LinkSet.IdList;
-      let links = data.eLinkResult.LinkSet.LinkSetDb.Link;
+    queryNode(id) {
+      axios.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&linkname=pmc_refs_pubmed&id=" +
+          id +
+          "&retmode=json"
+      ).then(this.addNodes)
+      .catch(console.error);
+    },
+    addNodes(res) {
+      let rootLink = res.data.linksets[0].ids[0];
+      let links = res.data.linksets[0].linksetdbs[0].links;
 
-      if (!this.nodeMap[rootLink.Id]) {
-        this.nodeMap[rootLink.Id] = true;
-        this.nodes.push({ id: rootLink.Id });
+      if (!this.nodeMap[rootLink]) {
+        this.nodeMap[rootLink] = true;
+        this.nodes.push({ id: rootLink });
       }
 
       links.forEach(link => {
-        if (!this.nodeMap[link.Id]) {
-          this.nodeMap[link.Id] = true;
-          let new_node = { id: link.Id };
+        if (!this.nodeMap[link]) {
+          this.nodeMap[link] = true;
+          let new_node = { id: link };
           if (new_node.id == 212572) {
             new_node._color = "orange";
           }
@@ -85,11 +106,9 @@ export default {
 
       this.links.push(
         ...links.map(link => {
-          return { sid: rootLink.Id, tid: link.Id };
+          return { sid: rootLink, tid: link };
         })
       );
-      console.log(this.nodes);
-      console.log(this.links);
     },
     getRequest(url, success, error) {
       var req = false;
@@ -119,6 +138,10 @@ export default {
       req.open("GET", url, true);
       req.send(null);
       return req;
+    },
+    parseMetaData(res) {
+      this.panelData = res.data.result[res.data.result.uids[0]];
+      console.log(this.panelData);
     }
   }
 };

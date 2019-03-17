@@ -1,21 +1,38 @@
 <template>
   <div class="panel">
-    <h1 class="publication-name">Publication Name</h1>
-    <p class="publication-authors">Mario Luigi Waluigi</p>
-    <p class="publication-date">01-01-2017</p>
-    <p class="publication-rank">200</p>
-    <h3 class="publication-abstract">Abstract</h3>
-    <p class="publication-abstract-content">Lorem ipsum dolor sit amet,
-      consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
-      et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-      exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-      Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
-      dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-      proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-    <button class="publication-link">Link to Publication</button>
-    <div class="publication-actions">
-      <button>Favorite</button>
-      <button>Hide</button>
+    <div v-if="metadata.title">
+      <h1 v-if="metadata.title"
+          class="publication-name">{{metadata.title}}</h1>
+      <p v-if="metadata.authors"
+         class="publication-authors">
+        Authors:
+        <span v-for="(author, index) in metadata.authors"
+              :key="index">{{author.name}}</span>
+      </p>
+      <p v-if="metadata.pubdate"
+         class="publication-date">Pub Date: {{metadata.pubdate}}</p>
+      <p v-if="metadata.title"
+         class="publication-rank">Page Rank: 200</p>
+      <h3 v-if="metadata.title"
+          class="publication-abstract">Abstract</h3>
+      <p class="publication-abstract-content">Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
+        et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+        exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
+        dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+        proident, sunt in culpa qui officia deserunt mollit anim id est
+        laborum.</p>
+      <button v-if="metadata.articleids"
+              class="publication-link"
+              @click="onClickLinktoPub">Link to Publication</button>
+      <div class="publication-actions">
+        <button>Favorite</button>
+        <button>Hide</button>
+      </div>
+    </div>
+    <div v-else class="no-data">
+      <h2>Click on a Node to see its Metadata</h2>
     </div>
   </div>
 </template>
@@ -25,6 +42,7 @@ import firebase from "firebase";
 
 export default {
   name: 'Panel',
+  props: ['metadata'],
   data () {
     return {
     }
@@ -45,10 +63,9 @@ export default {
       today = yyyy + "-" + mm + "-" + dd;
       return today;
     },
-    logout () {
-      firebase.auth().signOut().then(() => {
-        this.$router.replace('login')
-      })
+    onClickLinktoPub () {
+      console.log("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.metadata.articleids[0].value);
+      window.open("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.metadata.articleids[0].value);
     }
   }
 }
@@ -65,11 +82,27 @@ export default {
   color: #e6e6e6;
 }
 
+.no-data {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 100%;
+}
+
 button {
   color: #404040;
   font-weight: 900;
   border: none;
   font-size: 30px;
+}
+
+.publication-authors > span::after {
+  content: ", ";
+}
+
+.publication-authors > span:last-child:after {
+  content: "";
 }
 
 .publication-link {
@@ -85,7 +118,7 @@ button {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  width: inherit;
+  width: 400px;
 }
 
 .publication-actions > button {
