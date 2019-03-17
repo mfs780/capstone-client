@@ -13,11 +13,13 @@
     "@fortawesome/fontawesome-svg-core": "^1.2.15",
     "@fortawesome/free-solid-svg-icons": "^5.7.2",
     "@fortawesome/vue-fontawesome": "^0.1.5",
+    "firebase": "^5.9.0",
     "i": "^0.3.6",
     "npm": "^6.9.0",
     "vue": "^2.5.2",
     "vue-d3-network": "^0.1.28",
-    "vue-router": "^3.0.1"
+    "vue-router": "^3.0.1",
+    "vuefire": "^1.4.5"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.2",

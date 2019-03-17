@@ -6,11 +6,12 @@ import router from "./router";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faCheckSquare,
-  faMinusSquare
+  faMinusSquare,
+  faSignOutAlt
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
-library.add(faCheckSquare, faMinusSquare);
+library.add(faCheckSquare, faMinusSquare, faSignOutAlt);
 
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 
