@@ -34,10 +34,21 @@ export const db = firebase.firestore();
 
 Vue.config.productionTip = false;
 
-/* eslint-disable no-new */
-new Vue({
-  el: "#app",
-  router,
-  components: { App },
-  template: "<App/>"
+let app;
+
+firebase.auth().onAuthStateChanged(async user => {
+  if (!app) {
+    let user = await firebase.auth().currentUser;
+
+    /* eslint-disable no-new */
+    app = new Vue({
+      el: "#app",
+      router,
+      components: { App },
+      template: "<App/>"
+    });
+  }
 });
+
+
+

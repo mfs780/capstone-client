@@ -48,7 +48,7 @@ export default {
     }
   },
   methods: {
-    signUp () {
+    signup () {
       firebase.auth().createUserWithEmailAndPassword(this.email, this.password).then((user) => {
         this.$router.replace('/login')
       }).catch((err) => {
