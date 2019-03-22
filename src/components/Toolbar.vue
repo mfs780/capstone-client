@@ -8,7 +8,7 @@
     </div>
     <div class="filters">
       <div class="search-container">
-        PMID:
+        Title:
         <input v-model="search"
                class="search-input">
       </div>
