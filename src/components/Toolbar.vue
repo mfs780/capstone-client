@@ -1,39 +1,54 @@
 <template>
   <header class="toolbar">
-      <div class="logo">
-        <img class="logo-image" src="../assets/logo.png" width="300px">
-        Visual Research
+    <div class="logo">
+      <img class="logo-image"
+           src="../assets/logo.png"
+           width="300px">
+      Visual Research
+    </div>
+    <div class="filters">
+      <div class="search-container">
+        PMID:
+        <input v-model="search"
+               class="search-input">
       </div>
-      <div class="filters">
-        <div class="search-container">
-          PMID:
-          <input class="search-input">
-        </div>
-        <div class="search-container">
-          Start Date:
-          <input type="date" value="1990-01-01">
-        </div>
-        <div class="search-container">
-          End Date:
-          <input type="date" :value="currentDate()">
-        </div>
-        <div class="search-container">
-          Minimum Cited:
-          <input type="number" class="min-cited-input" value="10">
-        </div>
+      <div class="search-container">
+        Start Date:
+        <input v-model="startDate"
+               type="date">
       </div>
-      <div class="panel-actions">
-        <button class="square-btn">
-          <font-awesome-icon icon="check-square"/>
-        </button>
-        <button class="square-btn">
-          <font-awesome-icon icon="minus-square"/>
-        </button>
-        <button class="square-btn" @click="logout">
-          <font-awesome-icon icon="sign-out-alt"/>
+      <div class="search-container">
+        End Date:
+        <input v-model="endDate"
+               type="date">
+      </div>
+      <div class="search-container">
+        Minimum Cited:
+        <input v-model="rank"
+               type="number"
+               class="min-cited-input">
+      </div>
+      <div class="search-container">
+        <button class="submit-btn"
+                @click="onUpdateQuery">
+          SUBMIT
         </button>
       </div>
-    </header>
+
+    </div>
+    <div class="panel-actions">
+      <button class="square-btn">
+        <font-awesome-icon icon="check-square" />
+      </button>
+      <button class="square-btn">
+        <font-awesome-icon icon="minus-square" />
+      </button>
+      <button class="square-btn"
+              @click="logout">
+        <font-awesome-icon icon="sign-out-alt" />
+      </button>
+    </div>
+  </header>
 </template>
 
 <script>
@@ -43,10 +58,18 @@ export default {
   name: 'Toolbar',
   data () {
     return {
+      updateTimeout: null,
+      search: 'Memory Dysfunction',
+      startDate: "2010-01-01",
+      endDate: this.currentDate(),
+      rank: 2
     }
   },
   methods: {
-    currentDate() {
+    onUpdateQuery () {
+      this.$emit('updateQuery', this.query);
+    },
+    currentDate () {
       let today = new Date();
       let dd = today.getDate();
       let mm = today.getMonth() + 1;
@@ -66,6 +89,16 @@ export default {
         this.$router.replace('login')
       })
     }
+  },
+  computed: {
+    query () {
+      return {
+        search: this.search,
+        startDate: this.startDate,
+        endDate: this.endDate,
+        rank: this.rank
+      }
+    },
   }
 }
 </script>
@@ -106,6 +139,7 @@ export default {
   flex-direction: row;
   flex: 1;
   margin: 0 10px;
+  align-items: center;
 }
 
 .filters > div {
@@ -127,5 +161,12 @@ input {
   font-weight: 900;
   border: none;
   font-size: 30px;
+}
+
+.submit-btn {
+  color: #404040;
+  font-weight: 900;
+  border: none;
+  font-size: 20px;
 }
 </style>

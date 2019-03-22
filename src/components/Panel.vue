@@ -9,21 +9,15 @@
         <span v-for="(author, index) in metadata.authors"
               :key="index">{{author.name}}</span>
       </p>
-      <p v-if="metadata.pubdate"
-         class="publication-date">Pub Date: {{metadata.pubdate}}</p>
-      <p v-if="metadata.title"
+      <p v-if="metadata.pubyear"
+         class="publication-date">Pub Date: {{metadata.pubyear}}</p>
+      <p v-if="metadata.rank"
          class="publication-rank">Page Rank: 200</p>
-      <h3 v-if="metadata.title"
+      <h3 v-if="metadata.abstract"
           class="publication-abstract">Abstract</h3>
-      <p class="publication-abstract-content">Lorem ipsum dolor sit amet,
-        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
-        et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-        exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
-        dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-        proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.</p>
-      <button v-if="metadata.articleids"
+      <p v-if="metadata.abstract"
+         class="publication-abstract-content">{{metadata.abstract}}</p>
+      <button v-if="metadata.id"
               class="publication-link"
               @click="onClickLinktoPub">Link to Publication</button>
       <div class="publication-actions">
@@ -31,8 +25,9 @@
         <button>Hide</button>
       </div>
     </div>
-    <div v-else class="no-data">
-      <h2>Click on a Node to see its Metadata</h2>
+    <div v-else
+         class="no-data">
+      <h2>{{metadata.msg || msg}}</h2>
     </div>
   </div>
 </template>
@@ -45,6 +40,7 @@ export default {
   props: ['metadata'],
   data () {
     return {
+      msg: "Click on a Node to see its Metadata"
     }
   },
   methods: {
@@ -64,8 +60,8 @@ export default {
       return today;
     },
     onClickLinktoPub () {
-      console.log("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.metadata.articleids[0].value);
-      window.open("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.metadata.articleids[0].value);
+      console.log("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.metadata.id);
+      window.open("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.metadata.id);
     }
   }
 }
@@ -80,6 +76,7 @@ export default {
   text-align: left;
   padding: 0 20px;
   color: #e6e6e6;
+  overflow: auto;
 }
 
 .no-data {

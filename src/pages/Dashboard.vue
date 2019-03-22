@@ -1,11 +1,14 @@
 <template>
   <div class="dashboard">
-    <toolbar/>
+    <toolbar @updateQuery="onQueryChange" />
     <div class="content">
       <div class="visualization">
-        <d3-network :net-nodes="nodes" :net-links="links" :options="options" @node-click="clicky"></d3-network>
+        <d3-network :net-nodes="nodes"
+                    :net-links="links"
+                    :options="options"
+                    @node-click="clicky"></d3-network>
       </div>
-      <panel :metadata="panelData"/>
+      <panel :metadata="panelData" />
     </div>
   </div>
 </template>
@@ -25,7 +28,7 @@ export default {
     Panel,
     Toolbar
   },
-  data() {
+  data () {
     return {
       clickyTimeout: null,
       panelData: {},
@@ -40,11 +43,20 @@ export default {
       }
     };
   },
-  mounted() {
-    this.queryNode("4423606");
+  mounted () {
   },
   methods: {
-    clicky(e, node) {
+    onQueryChange (query) {
+      let newQuery = {
+        title: query.search,
+        min_year: parseInt(query.startDate.split('-')[0]),
+        max_year: parseInt(query.endDate.split('-')[0]),
+        min_cite: parseInt(query.rank),
+        rank: "citations"
+      }
+      this.queryNode(newQuery);
+    },
+    clicky (e, node) {
       if (this.clickyTimeout != null) {
         clearTimeout(this.clickyTimeout);
         this.clickyTimeout = null;
@@ -58,11 +70,13 @@ export default {
         }, 500);
       }
     },
-    getNodeData(node) {
+    getNodeData (node) {
+      node._color = "yellow";
+      this.nodes = [...this.nodes];
       let id = node.name.split(" ")[1];
       this.queryMetaData(id);
     },
-    expandNode(node) {
+    expandNode (node) {
       let id = node.name.split(" ")[1];
 
       if (node._color !== "red") {
@@ -70,78 +84,33 @@ export default {
       }
       node._color = "red";
     },
-    queryMetaData(id) {
-      axios.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pmc&id=" +
-          id +
-          "&retmode=json",
+    queryMetaData (id) {
+      axios.get("https://rv-harvard-api-stage.herokuapp.com/article/" + id,
       ).then(this.parseMetaData)
-      .catch(console.error);
-    },
-    queryNode(id) {
-      axios.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pmc&linkname=pmc_refs_pubmed&id=" +
-          id +
-          "&retmode=json"
-      ).then(this.addNodes)
-      .catch(console.error);
-    },
-    addNodes(res) {
-      let rootLink = res.data.linksets[0].ids[0];
-      let links = res.data.linksets[0].linksetdbs[0].links;
-
-      if (!this.nodeMap[rootLink]) {
-        this.nodeMap[rootLink] = true;
-        this.nodes.push({ id: rootLink });
-      }
-
-      links.forEach(link => {
-        if (!this.nodeMap[link]) {
-          this.nodeMap[link] = true;
-          let new_node = { id: link };
-          if (new_node.id == 212572) {
-            new_node._color = "orange";
+        .catch(() => {
+          this.panelData = {
+            msg: "No Metadata Available"
           }
-          this.nodes.push(new_node);
-        }
+        });
+    },
+    queryNode (query) {
+      axios.post("https://rv-harvard-api-stage.herokuapp.com/graph/title",
+        query
+      ).then(this.addNodes)
+        .catch(console.error);
+    },
+    parseMetaData (res) {
+      this.panelData = res.data.article[0];
+    },
+    addNodes (res) {
+      let links = res.data.graph.links;
+      let nodes = res.data.graph.nodes;
+
+      this.links = links.map(link => {
+        return { sid: link.source, tid: link.target };
       });
 
-      this.links.push(
-        ...links.map(link => {
-          return { sid: rootLink, tid: link };
-        })
-      );
-    },
-    getRequest(url, success, error) {
-      var req = false;
-      try {
-        req = new XMLHttpRequest();
-      } catch (e) {
-        try {
-          req = new ActiveXObject("Msxml2.XMLHTTP");
-        } catch (e) {
-          try {
-            req = new ActiveXObject("Microsoft.XMLHTTP");
-          } catch (e) {
-            return false;
-          }
-        }
-      }
-      if (!req) return false;
-      if (typeof success != "function") success = function() {};
-      if (typeof error != "function") error = function() {};
-      req.onreadystatechange = function() {
-        if (req.readyState == 4) {
-          return req.status === 200
-            ? success(req.responseText)
-            : error(req.status);
-        }
-      };
-      req.open("GET", url, true);
-      req.send(null);
-      return req;
-    },
-    parseMetaData(res) {
-      this.panelData = res.data.result[res.data.result.uids[0]];
-      console.log(this.panelData);
+      this.nodes = nodes;
     }
   }
 };
