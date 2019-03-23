@@ -3,10 +3,11 @@
     <toolbar @updateQuery="onQueryChange" />
     <div class="content">
       <div class="visualization">
-        <d3-network :net-nodes="nodes"
+        <force-graph :netnodes="nodes" :netlinks="links" @node-click="clicky"/>
+        <!-- <d3-network :net-nodes="nodes"
                     :net-links="links"
                     :options="options"
-                    @node-click="clicky"></d3-network>
+                    @node-click="clicky"></d3-network> -->
       </div>
       <panel :metadata="panelData" />
     </div>
@@ -15,6 +16,7 @@
 
 <script>
 import axios from 'axios'
+import ForceGraph from "../components/ForceGraph.vue";
 import Panel from "../components/Panel.vue";
 import Toolbar from "../components/Toolbar.vue";
 import D3Network from "vue-d3-network";
@@ -24,6 +26,7 @@ import { db } from "../main";
 export default {
   name: "Dashboard",
   components: {
+    ForceGraph,
     D3Network,
     Panel,
     Toolbar
@@ -54,6 +57,7 @@ export default {
         min_cite: parseInt(query.rank),
         rank: "citations"
       }
+      console.log(newQuery);
       this.queryNode(newQuery);
     },
     clicky (e, node) {
@@ -106,10 +110,7 @@ export default {
       let links = res.data.graph.links;
       let nodes = res.data.graph.nodes;
 
-      this.links = links.map(link => {
-        return { sid: link.source, tid: link.target };
-      });
-
+      this.links = links;
       this.nodes = nodes;
     }
   }
