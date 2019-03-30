@@ -3,7 +3,7 @@
     <toolbar @updateQuery="onQueryChange" />
     <div class="content">
       <div class="visualization">
-        <force-graph :netnodes="nodes" :netlinks="links" @node-click="clicky"/>
+        <force-graph :netgraph="graph" @node-click="clicky"/>
         <!-- <d3-network :net-nodes="nodes"
                     :net-links="links"
                     :options="options"
@@ -60,7 +60,7 @@ export default {
       console.log(newQuery);
       this.queryNode(newQuery);
     },
-    clicky (e, node) {
+    clicky (node) {
       if (this.clickyTimeout != null) {
         clearTimeout(this.clickyTimeout);
         this.clickyTimeout = null;
@@ -77,12 +77,11 @@ export default {
     getNodeData (node) {
       node._color = "yellow";
       this.nodes = [...this.nodes];
-      let id = node.name.split(" ")[1];
+      let id = node.id;
       this.queryMetaData(id);
     },
     expandNode (node) {
-      let id = node.name.split(" ")[1];
-
+      let id = node.id;
       if (node._color !== "red") {
         this.queryNode(id);
       }
@@ -112,6 +111,14 @@ export default {
 
       this.links = links;
       this.nodes = nodes;
+    }
+  },
+  computed: {
+    graph () {
+      return {
+        nodes: this.nodes,
+        links: this.links
+      }
     }
   }
 };
