@@ -51,13 +51,14 @@ export default {
       let link_force = d3.forceLink().id(d => {
         return d.id;
       });
-      let charge_force = d3.forceManyBody().strength(-100);
+      let charge_force = d3.forceManyBody().strength(-10);
       let center_force = d3.forceCenter(width / 2, height / 2);
 
       this.simulation
         .force("link", link_force)
         .force("charge", charge_force)
-        .force("center", center_force);
+        .force("center", center_force)
+        .force("collision", d3.forceCollide().radius(5));
 
       let link = d3
         .select(this.$refs.links)
@@ -77,7 +78,7 @@ export default {
         .append("circle")
         .attr("r", 5)
         .attr("fill", function(d) {
-          return d._color || "brown";
+          return d._color || "#404040";
         })
         .call(
           d3
@@ -150,8 +151,8 @@ export default {
     },
     dragended(d) {
       if (!d3.event.active) this.simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
+      d.fx = d3.event.x;
+      d.fy = d3.event.y;
     },
     mergeByKeys(keys, source, target) {
       console.log(keys);
@@ -165,13 +166,16 @@ export default {
             return tE[key] == sE[key];
           });
           if (isMatch) {
-            src[index] = tE;
+            src[index] = Object.assign(src[index], tE);
             return true;
           }
           return false;
         });
 
         if (!isMatch) {
+          if (tE.search_returned_paper) {
+            tE._color = 'purple';
+          }
           src.push(tE);
         }
       });
@@ -208,7 +212,6 @@ export default {
 .force-graph {
   width: 100%;
   height: 100%;
-  border: 1px solid red;
 }
 </style>
 

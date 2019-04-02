@@ -1,6 +1,6 @@
 <template>
   <div class="panel">
-    <div v-if="metadata.title">
+    <div v-if="metadata.title" class="panel-content">
       <h1 v-if="metadata.title"
           class="publication-name">{{metadata.title}}</h1>
       <p v-if="metadata.authors"
@@ -77,6 +77,11 @@ export default {
   padding: 0 20px;
   color: #e6e6e6;
   overflow: auto;
+}
+
+.panel-content {
+  max-height: 90%;
+  overflow: scroll;
 }
 
 .no-data {
