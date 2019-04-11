@@ -80,7 +80,7 @@ export default {
         .attr("r", 5)
         .attr("fill", d => {
           d._color = "#404040";
-          if (d.isVisted) {
+          if (d.isVisited) {
             d._color = this.nodeColors.visited;
           }
           if (d.isFavorite) {
@@ -133,7 +133,7 @@ export default {
         })
         .attr("fill", d => {
           d._color = "#404040";
-          if (d.isVisted) {
+          if (d.isVisited) {
             d._color = this.nodeColors.visited;
           }
           if (d.isFavorite) {
@@ -183,6 +183,7 @@ export default {
 
   watch: {
     netgraph() {
+      console.log('watch');
       if (this.graph.nodes.length !== this.netgraph.nodes.length) {
         this.netgraph.nodes.forEach(node => {
           delete node.fx;
@@ -196,10 +197,12 @@ export default {
         this.graph.nodes = this.netgraph.nodes;
         this.graph.links = this.netgraph.links;
 
+        console.log('reload');
         this.reload();
       } else {
         this.graph.nodes = this.netgraph.nodes;
         this.graph.links = this.netgraph.links;
+        console.log('restart');
         this.simulation.restart();
       }
       // db.collection('dashboards').doc(firebase.auth().currentUser.email).set(this.graph);

@@ -29,9 +29,11 @@
                class="min-cited-input">
       </div>
       <div class="search-container">
-        <button class="submit-btn"
+        <button :disabled="isQuerying"
+                class="submit-btn"
                 @click="onUpdateQuery">
-          SUBMIT
+          <font-awesome-icon v-if="isQuerying" class="spinner" icon="spinner" />
+          <span v-else>SUBMIT</span>
         </button>
       </div>
 
@@ -52,6 +54,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
 import firebase from "firebase";
 
 export default {
@@ -67,6 +70,7 @@ export default {
   },
   methods: {
     onUpdateQuery () {
+      console.log('click');
       this.$emit('updateQuery', this.query);
     },
     currentDate () {
@@ -91,6 +95,9 @@ export default {
     }
   },
   computed: {
+    ...mapState([
+      'isQuerying'
+    ]),
     query () {
       return {
         search: this.search,
@@ -164,9 +171,17 @@ input {
 }
 
 .submit-btn {
+  width: 95px;
+  text-align: center;
+  outline: none;
   color: #404040;
   font-weight: 900;
   border: none;
   font-size: 20px;
+  cursor: pointer;
+}
+
+.spinner {
+  animation: fa-spin 2s infinite linear;
 }
 </style>

@@ -92,7 +92,6 @@ export default new Vuex.Store({
       axios
         .get("https://rv-harvard-api-stage.herokuapp.com/article/" + id)
         .then(res => {
-          console.log(res);
           commit("setMetaData", { data: res.data });
           commit("stopQuerying");
         })
