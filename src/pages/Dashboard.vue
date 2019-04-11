@@ -4,17 +4,14 @@
     <div class="content">
       <div class="visualization">
         <div class="legend">
-          <div class="legend-item purple" tooltip="New"></div>
-          <div class="legend-item brown" tooltip="Not Visited"></div>
-          <div class="legend-item yellow" tooltip="Visited"></div>
+          <div class="legend-item" v-for="(value, key) in searches" :key="key">
+            <div class="legend-color" :style="{ backgroundColor: value }"></div>
+            {{key}}
+          </div>
         </div>
-        <force-graph :netgraph="graph" @node-click="clicky"/>
-        <!-- <d3-network :net-nodes="nodes"
-                    :net-links="links"
-                    :options="options"
-        @node-click="clicky"></d3-network>-->
+        <force-graph :netgraph="graph" @node-click="onNodeClick"/>
       </div>
-      <panel :metadata="panelData"/>
+      <panel :metadata="panelData" @update-favorite="onUpdateFavorite"/>
     </div>
   </div>
 </template>
@@ -24,7 +21,6 @@ import axios from "axios";
 import ForceGraph from "../components/ForceGraph.vue";
 import Panel from "../components/Panel.vue";
 import Toolbar from "../components/Toolbar.vue";
-import D3Network from "vue-d3-network";
 import firebase from "firebase";
 import { db } from "../main";
 
@@ -32,26 +28,20 @@ export default {
   name: "Dashboard",
   components: {
     ForceGraph,
-    D3Network,
     Panel,
     Toolbar
   },
   data() {
     return {
-      clickyTimeout: null,
+      searches: {},
       panelData: {},
-      nodeMap: {},
       nodes: [],
-      links: [],
-      options: {
-        force: 800,
-        nodeSize: 20,
-        nodeLabels: false,
-        linkWidth: 1
-      }
+      links: []
     };
   },
-  mounted() {},
+  mounted() {
+    console.log(db);
+  },
   methods: {
     onQueryChange(query) {
       let newQuery = {
@@ -61,40 +51,24 @@ export default {
         min_cite: parseInt(query.rank),
         rank: "citations"
       };
-      console.log(newQuery);
       this.queryNode(newQuery);
     },
-    clicky(node) {
-      if (this.clickyTimeout != null) {
-        clearTimeout(this.clickyTimeout);
-        this.clickyTimeout = null;
-        this.expandNode(node);
-        this.getNodeData(node);
-      } else {
-        this.clickyTimeout = setTimeout(() => {
-          this.getNodeData(node);
-          clearTimeout(this.clickyTimeout);
-          this.clickyTimeout = null;
-        }, 500);
-      }
-    },
-    getNodeData(node) {
-      node._color = "yellow";
+    onNodeClick(node) {
+      node.isVisted = true;
       this.nodes = [...this.nodes];
       let id = node.id;
       this.queryMetaData(id);
     },
-    expandNode(node) {
-      let id = node.id;
-      if (node._color !== "red") {
-        this.queryNode(id);
-      }
-      node._color = "red";
+    onUpdateFavorite(data) {
+      let node = this.getNodeById(data.id);
+      node.isFavorite = data.isFavorite;
+      console.log(node.isFavorite);
+      this.nodes = [...this.nodes];
     },
     queryMetaData(id) {
       axios
         .get("https://rv-harvard-api-stage.herokuapp.com/article/" + id)
-        .then(this.parseMetaData)
+        .then(this.setPanelData)
         .catch(() => {
           this.panelData = {
             msg: "No Metadata Available"
@@ -104,18 +78,66 @@ export default {
     queryNode(query) {
       axios
         .post("https://rv-harvard-api-stage.herokuapp.com/graph/title", query)
-        .then(this.addNodes)
+        .then(res => {
+          this.setNodes(res, query);
+        })
         .catch(console.error);
     },
-    parseMetaData(res) {
-      this.panelData = res.data.article[0];
+    setPanelData(res) {
+      let panelData = res.data.article[0];
+      let nodeData = this.getNodeById(panelData.id) || {};
+      this.panelData = Object.assign(panelData, nodeData);
     },
-    addNodes(res) {
-      let links = res.data.graph.links;
-      let nodes = res.data.graph.nodes;
+    setNodes(res, query) {
+      let newNodes = this.setNodeBorderColorByQuery(
+        res.data.graph.nodes,
+        query
+      );
+      this.nodes = this.mergeByKeys(["id"], this.nodes, newNodes);
+      this.links = this.mergeByKeys(
+        ["source", "target"],
+        this.links,
+        res.data.graph.links
+      );
+    },
+    setNodeBorderColorByQuery(nodes, query) {
+      this.searches[query.title] =
+        this.searches[query.title] || this.randomColor();
+      nodes.forEach(node => {
+        if (node.search_returned_paper) {
+          node._border = this.searches[query.title];
+        }
+      });
 
-      this.links = links;
-      this.nodes = nodes;
+      return nodes;
+    },
+    mergeByKeys(keys, source, target) {
+      let src = Object.assign([], source);
+      let trt = Object.assign([], target);
+      trt.forEach(tE => {
+        let isMatch = false;
+        src.some((sE, index) => {
+          isMatch = keys.every(key => {
+            return tE[key] == sE[key];
+          });
+          if (isMatch) {
+            src[index] = Object.assign(src[index], tE);
+            return true;
+          }
+          return false;
+        });
+
+        if (!isMatch) {
+          src.push(tE);
+        }
+      });
+
+      return src;
+    },
+    getNodeById(id) {
+      return this.nodes.find(node => {
+        return node.id === id;
+      });
     }
   },
   computed: {
@@ -124,6 +146,48 @@ export default {
         nodes: this.nodes,
         links: this.links
       };
+    },
+    randomColor() {
+      return (() => {
+        var golden_ratio_conjugate = 0.618033988749895;
+        var h = Math.random();
+
+        var hslToRgb = function(h, s, l) {
+          var r, g, b;
+
+          if (s == 0) {
+            r = g = b = l; // achromatic
+          } else {
+            function hue2rgb(p, q, t) {
+              if (t < 0) t += 1;
+              if (t > 1) t -= 1;
+              if (t < 1 / 6) return p + (q - p) * 6 * t;
+              if (t < 1 / 2) return q;
+              if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+              return p;
+            }
+
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+          }
+
+          return (
+            "#" +
+            Math.round(r * 255).toString(16) +
+            Math.round(g * 255).toString(16) +
+            Math.round(b * 255).toString(16)
+          );
+        };
+
+        return function() {
+          h += golden_ratio_conjugate;
+          h %= 1;
+          return hslToRgb(h, 0.5, 0.6);
+        };
+      })();
     }
   }
 };
@@ -151,31 +215,28 @@ export default {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 100px;
-  height: 20px;
-  background-color: darkgray;
-  opacity: 0.9;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
+  padding: 10px;
+  width: fit-content;
+  height: fit-content;
+  overflow-y: auto;
+  font-size: 11px;
+  text-align: left;
+  max-height: 150px;
+  display: block;
 }
 
 .legend-item {
-  height: 10px;
-  width: 10px;
+  height: 15px;
   border-radius: 50%;
+  color: black;
+  margin: 2px;
 }
 
-.legend-item.yellow {
-  background-color: yellow;
-}
-
-.legend-item.brown {
-  background-color: #404040;
-}
-
-.legend-item.purple {
-  background-color: purple;
+.legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 [tooltip]:before {

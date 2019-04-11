@@ -8,6 +8,8 @@
 </template>
 
 <script>
+import firebase from 'firebase'
+import { db } from '../main'
 import * as d3 from "d3";
 
 export default {
@@ -26,7 +28,11 @@ export default {
       },
       nodes: [],
       links: [],
-      simulation: undefined
+      simulation: undefined,
+      nodeColors: {
+        visited: "blue",
+        favorite: "yellow"
+      }
     };
   },
 
@@ -39,11 +45,6 @@ export default {
     loadData() {
       let height = this.$el.parentElement.offsetHeight;
       let width = this.$el.parentElement.offsetWidth;
-      let nodes = this.graph.nodes;
-      let links = this.graph.links;
-
-      console.log(nodes);
-      console.log(links);
 
       this.simulation = d3.forceSimulation();
 
@@ -63,7 +64,7 @@ export default {
       let link = d3
         .select(this.$refs.links)
         .selectAll("line")
-        .data(links)
+        .data(this.graph.links)
         .enter()
         .append("line")
         .attr("stroke-width", function(d) {
@@ -73,12 +74,22 @@ export default {
       let node = d3
         .select(this.$refs.nodes)
         .selectAll("circle")
-        .data(nodes)
+        .data(this.graph.nodes)
         .enter()
         .append("circle")
         .attr("r", 5)
-        .attr("fill", function(d) {
-          return d._color || "#404040";
+        .attr("fill", d => {
+          d._color = "#404040";
+          if (d.isVisted) {
+            d._color = this.nodeColors.visited;
+          }
+          if (d.isFavorite) {
+            d._color = this.nodeColors.favorite;
+          }
+          return d._color;
+        })
+        .attr("stroke", d => {
+          return d._border || "white";
         })
         .call(
           d3
@@ -92,9 +103,9 @@ export default {
         return d.id;
       });
 
-      this.simulation.nodes(nodes).on("tick", () => this.ticked(link, node));
+      this.simulation.nodes(this.graph.nodes).on("tick", () => this.ticked(link, node));
 
-      this.simulation.force("link").links(links);
+      this.simulation.force("link").links(this.graph.links);
 
       this.initZoomOn(d3.select(this.$refs.svg));
     },
@@ -120,8 +131,20 @@ export default {
         .attr("cy", function(d) {
           return d.y;
         })
+        .attr("fill", d => {
+          d._color = "#404040";
+          if (d.isVisted) {
+            d._color = this.nodeColors.visited;
+          }
+          if (d.isFavorite) {
+            d._color = this.nodeColors.favorite;
+          }
+          return d._color;
+        })
+        .attr("stroke", d => {
+          return d._border || "white";
+        })
         .on("click", d => {
-          console.log(d);
           this.$emit("node-click", d);
         });
     },
@@ -153,35 +176,6 @@ export default {
       if (!d3.event.active) this.simulation.alphaTarget(0);
       d.fx = d3.event.x;
       d.fy = d3.event.y;
-    },
-    mergeByKeys(keys, source, target) {
-      console.log(keys);
-      console.log(source);
-      let src = Object.assign([], source);
-      let trt = Object.assign([], target);
-      trt.forEach(tE => {
-        let isMatch = false;
-        src.some((sE, index) => {
-          isMatch = keys.every(key => {
-            return tE[key] == sE[key];
-          });
-          if (isMatch) {
-            src[index] = Object.assign(src[index], tE);
-            return true;
-          }
-          return false;
-        });
-
-        if (!isMatch) {
-          if (tE.search_returned_paper) {
-            tE._color = 'purple';
-          }
-          src.push(tE);
-        }
-      });
-
-      console.log(src);
-      return src;
     }
   },
 
@@ -189,20 +183,26 @@ export default {
 
   watch: {
     netgraph() {
-      console.log("watch");
-      this.graph.nodes = this.mergeByKeys(
-        ["id"],
-        this.graph.nodes,
-        this.netgraph.nodes
-      );
-      this.graph.links = this.mergeByKeys(
-        ["source", "target"],
-        this.graph.links,
-        this.netgraph.links
-      );
-      this.nodes = [];
-      this.links = [];
-      this.reload();
+      if (this.graph.nodes.length !== this.netgraph.nodes.length) {
+        this.netgraph.nodes.forEach(node => {
+          delete node.fx;
+          delete node.fy;
+          delete node.vx;
+          delete node.vy;
+          delete node.y;
+          delete node.x;
+        });
+
+        this.graph.nodes = this.netgraph.nodes;
+        this.graph.links = this.netgraph.links;
+
+        this.reload();
+      } else {
+        this.graph.nodes = this.netgraph.nodes;
+        this.graph.links = this.netgraph.links;
+        this.simulation.restart();
+      }
+      // db.collection('dashboards').doc(firebase.auth().currentUser.email).set(this.graph);
     }
   }
 };
@@ -222,7 +222,6 @@ export default {
 }
 
 .nodes circle {
-  stroke: #fff;
   stroke-width: 1.5px;
 }
 </style>
