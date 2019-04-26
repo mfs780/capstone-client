@@ -73,6 +73,7 @@ let mergeByKeys = (keys, source, target) => {
 
 export default new Vuex.Store({
   state: {
+    selectedSearch: '',
     selectedNode: undefined,
     nodeMetaData: {},
     searches: {},
@@ -81,8 +82,18 @@ export default new Vuex.Store({
     isQuerying: false
   },
   actions: {
+    initGraph({ commit }, graph) {
+      commit('setGraph', { graph });
+    },
     selectNode({ commit }, node) {
       commit("setSelectedNode", { node });
+    },
+    selectSearch({ commit }, search) {
+      commit("setSelectedSearch", { search });
+    },
+    removeSearch({ commit }, search) {
+      commit("removeNodes", { search });
+      commit("removeSearch", { search });
     },
     queryMetaData({ state, commit }, id) {
       if (state.isQuerying) {
@@ -90,7 +101,7 @@ export default new Vuex.Store({
       }
       commit("startQuerying");
       axios
-        .get("https://rv-harvard-api-stage.herokuapp.com/article/" + id)
+        .get("https://rv-harvard-api-stage.herokuapp.com/v1/article/" + id)
         .then(res => {
           commit("setMetaData", { data: res.data });
           commit("stopQuerying");
@@ -107,7 +118,7 @@ export default new Vuex.Store({
       }
       commit("startQuerying");
       axios
-        .post("https://rv-harvard-api-stage.herokuapp.com/graph/title", query)
+        .post("https://rv-harvard-api-stage.herokuapp.com/v1/graph/title", query)
         .then(res => {
           commit("setSearch", { query });
           commit("setNodes", { data: res.data, query: query });
@@ -127,11 +138,45 @@ export default new Vuex.Store({
     }
   },
   mutations: {
+    removeNodes(state, {search}) {
+      let nodes = [...state.nodes];
+      let i = nodes.length;
+      let nodeMap = {};
+
+      while(i--) {
+        let node = nodes[i];
+        node.searches.delete(search);
+        if (!node.searches.size && !node.isFavorite) {
+          nodeMap[node.id] = true;
+          nodes.splice(i, 1);
+        }
+      }
+
+      let links = [...state.links];
+      i = links.length;
+
+      while(i--) {
+        let link = links[i];
+        if ((nodeMap[link.source.id] || nodeMap[link.target.id])) {
+          links.splice(i, 1);
+        }
+      }
+
+      state.nodes = nodes;
+      state.links = links;
+    },
+    removeSearch(state , {search}) {
+      Vue.delete(state.searches, search);
+    },
     startQuerying(state) {
       state.isQuerying = true;
     },
     stopQuerying(state) {
       state.isQuerying = false;
+    },
+    setGraph(state, { graph }) {
+      state.nodes = graph.nodes;
+      state.links = graph.links;
     },
     setMetaData(state, { data }) {
       if (!data) {
@@ -143,9 +188,8 @@ export default new Vuex.Store({
     },
     setNodes(state, { data, query }) {
       data.graph.nodes.forEach(node => {
-        if (node.search_returned_paper) {
-          node._border = state.searches[query.title];
-        }
+        node.searches = node.searches || new Set();
+        node.searches.add(query.title);
       });
 
       state.nodes = mergeByKeys(["id"], state.nodes, data.graph.nodes);
@@ -162,6 +206,9 @@ export default new Vuex.Store({
     setSelectedNode(state, { node }) {
       state.selectedNode = node.id;
     },
+    setSelectedSearch(state, { search }) {
+      state.selectedSearch = state.selectedSearch === search ? '' : search;
+    },
     setVisited(state, { node }) {
       node.isVisited = true;
       let index = state.nodes.findIndex(n => {
@@ -175,7 +222,7 @@ export default new Vuex.Store({
     toggleFavorited(state, { node }) {
       node.isFavorite = !node.isFavorite;
       let index = state.nodes.findIndex(n => {
-        n.id == node;
+        return n.id == node.id;
       });
       if (index !== -1) {
         state.nodes[index] = node;

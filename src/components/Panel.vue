@@ -7,7 +7,7 @@
         <span v-for="(author, index) in nodeMetaData.authors" :key="index">{{author.name}}</span>
       </p>
       <p v-if="nodeMetaData.pubyear" class="date">Pub Date: {{nodeMetaData.pubyear}}</p>
-      <p v-if="nodeMetaData.rank" class="rank">Page Rank: 200</p>
+      <p v-if="nodeMetaData.jid" class="rank">Page Rank: {{nodeMetaData.jid}}</p>
       <h3 v-if="nodeMetaData.abstract" class="abstract">Abstract</h3>
       <p v-if="nodeMetaData.abstract" class="abstract-content">{{nodeMetaData.abstract}}</p>
     </div>
@@ -16,8 +16,7 @@
     </div>
     <div v-if="nodeMetaData.title" class="actions">
       <button v-if="nodeMetaData.id" class="action long" @click="onClickLinktoPub">Link to Publication</button>
-      <button @click="onClickFavorite" class="action">{{favoriteText}}</button>
-      <button class="action">Hide</button>
+      <button @click="onClickFavorite" class="action long">{{favoriteText}}</button>
     </div>
   </div>
 </template>
@@ -54,9 +53,6 @@ export default {
       return today;
     },
     onClickLinktoPub() {
-      console.log(
-        "https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.nodeMetaData.id
-      );
       window.open(
         "https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.nodeMetaData.id
       );
@@ -77,8 +73,16 @@ export default {
     ]),
     ...mapGetters([
       'getNodeById'
-    ])
-  }
+    ]),
+    sNode () {
+      return this.getNodeById(this.selectedNode);
+    }
+  },
+  watch: {
+    sNode () {
+      this.setFavoriteText();
+    }
+  },
 };
 </script>
 

@@ -6,49 +6,18 @@
            width="300px">
       Visual Research
     </div>
-    <div class="filters">
-      <div class="search-container">
-        Title:
-        <input v-model="search"
-               class="search-input">
-      </div>
-      <div class="search-container">
-        Start Date:
-        <input v-model="startDate"
-               type="date">
-      </div>
-      <div class="search-container">
-        End Date:
-        <input v-model="endDate"
-               type="date">
-      </div>
-      <div class="search-container">
-        Minimum Cited:
-        <input v-model="rank"
-               type="number"
-               class="min-cited-input">
-      </div>
-      <div class="search-container">
-        <button :disabled="isQuerying"
-                class="submit-btn"
-                @click="onUpdateQuery">
-          <font-awesome-icon v-if="isQuerying" class="spinner" icon="spinner" />
-          <span v-else>SUBMIT</span>
-        </button>
-      </div>
-
-    </div>
     <div class="panel-actions">
-      <button class="square-btn">
-        <font-awesome-icon icon="check-square" />
-      </button>
-      <button class="square-btn">
-        <font-awesome-icon icon="minus-square" />
-      </button>
-      <button class="square-btn"
-              @click="logout">
+      <div class="tutorial btn"
+           @click="open-tutorial">
+        Tutorial
+        <font-awesome-icon class="tut-icon"
+                           icon="question-circle" />
+      </div>
+      <div class="vertical"/>
+      <div class="logout-btn btn"
+           @click="logout">
         <font-awesome-icon icon="sign-out-alt" />
-      </button>
+      </div>
     </div>
   </header>
 </template>
@@ -59,53 +28,12 @@ import firebase from "firebase";
 
 export default {
   name: 'Toolbar',
-  data () {
-    return {
-      updateTimeout: null,
-      search: 'Memory Dysfunction',
-      startDate: "2010-01-01",
-      endDate: this.currentDate(),
-      rank: 2
-    }
-  },
   methods: {
-    onUpdateQuery () {
-      console.log('click');
-      this.$emit('updateQuery', this.query);
-    },
-    currentDate () {
-      let today = new Date();
-      let dd = today.getDate();
-      let mm = today.getMonth() + 1;
-      let yyyy = today.getFullYear();
-      if (dd < 10) {
-        dd = "0" + dd;
-      }
-      if (mm < 10) {
-        mm = "0" + mm;
-      }
-
-      today = yyyy + "-" + mm + "-" + dd;
-      return today;
-    },
     logout () {
       firebase.auth().signOut().then(() => {
         this.$router.replace('login')
       })
     }
-  },
-  computed: {
-    ...mapState([
-      'isQuerying'
-    ]),
-    query () {
-      return {
-        search: this.search,
-        startDate: this.startDate,
-        endDate: this.endDate,
-        rank: this.rank
-      }
-    },
   }
 }
 </script>
@@ -141,47 +69,41 @@ export default {
   margin-right: 5px;
 }
 
-.filters {
+.tutorial {
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 5px;
+  font-size: 20px;
+}
+
+.tut-icon {
+  padding: 0 5px;
+}
+
+.panel-actions {
   display: flex;
   flex-direction: row;
-  flex: 1;
-  margin: 0 10px;
-  align-items: center;
-}
-
-.filters > div {
-  margin: 0 10px;
-}
-
-input {
+  justify-content: center;
   align-self: center;
-  margin: 10px 0;
-  padding: 7px;
-  background-color: transparent;
-  border: 1px solid #e6e6e6;
-  color: #404040;
-  font-weight: 600;
 }
 
-.square-btn {
-  color: #404040;
+.logout-btn {
   font-weight: 900;
-  border: none;
-  font-size: 30px;
-}
-
-.submit-btn {
-  width: 95px;
-  text-align: center;
-  outline: none;
-  color: #404040;
-  font-weight: 900;
-  border: none;
-  font-size: 20px;
+  font-size: 25px;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 10px;
 }
 
-.spinner {
-  animation: fa-spin 2s infinite linear;
+.vertical {
+  border-right: 1px solid #404040;
+}
+
+.btn:hover {
+  color: black;
 }
 </style>

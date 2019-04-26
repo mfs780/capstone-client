@@ -9,11 +9,14 @@ import {
   faCheckSquare,
   faMinusSquare,
   faSignOutAlt,
-  faSpinner
+  faSpinner,
+  faQuestionCircle,
+  faPlusSquare,
+  faTimesCircle
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
-library.add(faCheckSquare, faMinusSquare, faSignOutAlt, faSpinner);
+library.add(faCheckSquare, faMinusSquare, faPlusSquare, faSignOutAlt, faSpinner,faQuestionCircle, faTimesCircle);
 
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 
