@@ -1,51 +1,42 @@
 <template>
   <div class="panel">
-    <div v-if="metadata.title" class="panel-content">
-      <h1 v-if="metadata.title" class="name">{{metadata.title}}</h1>
-      <p v-if="metadata.authors" class="authors">
+    <div v-if="nodeMetaData.title" class="panel-content">
+      <h1 v-if="nodeMetaData.title" class="name">{{nodeMetaData.title}}</h1>
+      <p v-if="nodeMetaData.authors" class="authors">
         Authors:
-        <span v-for="(author, index) in metadata.authors" :key="index">{{author.name}}</span>
+        <span v-for="(author, index) in nodeMetaData.authors" :key="index">{{author.name}}</span>
       </p>
-      <p v-if="metadata.pubyear" class="date">Pub Date: {{metadata.pubyear}}</p>
-      <p v-if="metadata.rank" class="rank">Page Rank: 200</p>
-      <h3 v-if="metadata.abstract" class="abstract">Abstract</h3>
-      <p v-if="metadata.abstract" class="abstract-content">{{metadata.abstract}}</p>
+      <p v-if="nodeMetaData.pubyear" class="date">Pub Date: {{nodeMetaData.pubyear}}</p>
+      <p v-if="nodeMetaData.jid" class="rank">Page Rank: {{nodeMetaData.jid}}</p>
+      <h3 v-if="nodeMetaData.abstract" class="abstract">Abstract</h3>
+      <p v-if="nodeMetaData.abstract" class="abstract-content">{{nodeMetaData.abstract}}</p>
     </div>
     <div v-else class="no-data">
-      <h2>{{metadata.msg || msg}}</h2>
+      <h2>{{nodeMetaData.msg || msg}}</h2>
     </div>
-    <div v-if="metadata.title" class="actions">
-      <button v-if="metadata.id" class="action long" @click="onClickLinktoPub">Link to Publication</button>
-      <button @click="onClickFavorite" class="action">{{favoriteText}}</button>
-      <button class="action">Hide</button>
+    <div v-if="nodeMetaData.title" class="actions">
+      <button v-if="nodeMetaData.id" class="action long" @click="onClickLinktoPub">Link to Publication</button>
+      <button @click="onClickFavorite" class="action long">{{favoriteText}}</button>
     </div>
   </div>
 </template>
 
 <script>
+import { mapGetters, mapActions, mapState } from 'vuex';
 import firebase from "firebase";
 
 export default {
   name: "Panel",
-  props: {
-    metadata: {
-      type: Object,
-      default: {}
-    }
-  },
   data() {
     return {
-      msg: "Click on a Node to see its Metadata",
-      favoriteText: ""
+      msg: "Click on a Node to see its MetaData",
+      favoriteText: ''
     };
   },
-  mounted() {
+  mounted () {
     this.setFavoriteText();
   },
   methods: {
-    setFavoriteText() {
-      this.favoriteText = this.metadata.isFavorite ? "Unfavorite" : "Favorite";
-    },
     currentDate() {
       let today = new Date();
       let dd = today.getDate();
@@ -62,19 +53,36 @@ export default {
       return today;
     },
     onClickLinktoPub() {
-      console.log(
-        "https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.metadata.id
-      );
       window.open(
-        "https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.metadata.id
+        "https://www.ncbi.nlm.nih.gov/pubmed/?term=" + this.nodeMetaData.id
       );
     },
     onClickFavorite() {
-      this.metadata.isFavorite = !this.metadata.isFavorite;
+      this.$emit("update-favorite", this.getNodeById(this.selectedNode));
       this.setFavoriteText();
-      this.$emit("update-favorite", this.metadata);
+    },
+    setFavoriteText () {
+      let node = this.getNodeById(this.selectedNode);
+      this.favoriteText = node && node.isFavorite ? "Unfavorite" : "Favorite";
     }
-  }
+  },
+  computed: {
+    ...mapState([
+      'selectedNode',
+      'nodeMetaData',
+    ]),
+    ...mapGetters([
+      'getNodeById'
+    ]),
+    sNode () {
+      return this.getNodeById(this.selectedNode);
+    }
+  },
+  watch: {
+    sNode () {
+      this.setFavoriteText();
+    }
+  },
 };
 </script>
 

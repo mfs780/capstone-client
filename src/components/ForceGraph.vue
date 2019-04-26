@@ -1,13 +1,18 @@
 <template>
-  <svg ref="svg" class="force-graph">
-    <g ref="everything" class="everything">
-      <g ref="links" class="links"></g>
-      <g ref="nodes" class="nodes"></g>
+  <svg ref="svg"
+       class="force-graph">
+    <g ref="everything"
+       class="everything">
+      <g ref="links"
+         class="links"></g>
+      <g ref="nodes"
+         class="nodes"></g>
     </g>
   </svg>
 </template>
 
 <script>
+import { mapState } from 'vuex';
 import firebase from 'firebase'
 import { db } from '../main'
 import * as d3 from "d3";
@@ -20,7 +25,7 @@ export default {
     }
   },
 
-  data() {
+  data () {
     return {
       graph: {
         nodes: [],
@@ -36,13 +41,13 @@ export default {
     };
   },
 
-  mounted() {
+  mounted () {
     this.loadData();
   },
 
   methods: {
     // load data
-    loadData() {
+    loadData () {
       let height = this.$el.parentElement.offsetHeight;
       let width = this.$el.parentElement.offsetWidth;
 
@@ -67,7 +72,7 @@ export default {
         .data(this.graph.links)
         .enter()
         .append("line")
-        .attr("stroke-width", function(d) {
+        .attr("stroke-width", function (d) {
           return Math.sqrt(d.value);
         });
 
@@ -78,19 +83,8 @@ export default {
         .enter()
         .append("circle")
         .attr("r", 5)
-        .attr("fill", d => {
-          d._color = "#404040";
-          if (d.isVisted) {
-            d._color = this.nodeColors.visited;
-          }
-          if (d.isFavorite) {
-            d._color = this.nodeColors.favorite;
-          }
-          return d._color;
-        })
-        .attr("stroke", d => {
-          return d._border || "white";
-        })
+        .attr("fill", this.getFillColor)
+        .attr("stroke", this.getStrokeColor)
         .call(
           d3
             .drag()
@@ -99,7 +93,7 @@ export default {
             .on("end", this.dragended)
         );
 
-      node.append("title").text(function(d) {
+      node.append("title").text(function (d) {
         return d.id;
       });
 
@@ -109,46 +103,36 @@ export default {
 
       this.initZoomOn(d3.select(this.$refs.svg));
     },
-    ticked(link, node) {
+    ticked (link, node) {
       link
-        .attr("x1", function(d) {
+        .attr("x1", function (d) {
           return d.source.x;
         })
-        .attr("y1", function(d) {
+        .attr("y1", function (d) {
           return d.source.y;
         })
-        .attr("x2", function(d) {
+        .attr("x2", function (d) {
           return d.target.x;
         })
-        .attr("y2", function(d) {
+        .attr("y2", function (d) {
           return d.target.y;
         });
 
       node
-        .attr("cx", function(d) {
+        .attr("cx", function (d) {
           return d.x;
         })
-        .attr("cy", function(d) {
+        .attr("cy", function (d) {
           return d.y;
         })
-        .attr("fill", d => {
-          d._color = "#404040";
-          if (d.isVisted) {
-            d._color = this.nodeColors.visited;
-          }
-          if (d.isFavorite) {
-            d._color = this.nodeColors.favorite;
-          }
-          return d._color;
-        })
-        .attr("stroke", d => {
-          return d._border || "white";
-        })
+        .attr("fill", this.getFillColor)
+        .attr("stroke", this.getStrokeColor)
+        .attr("opacity", this.getOpacity)
         .on("click", d => {
           this.$emit("node-click", d);
         });
     },
-    reload() {
+    reload () {
       d3.select(this.$refs.links)
         .selectAll("*")
         .remove();
@@ -157,32 +141,57 @@ export default {
         .remove();
       this.loadData();
     },
-    initZoomOn($e) {
+    initZoomOn ($e) {
       let g = d3.select(this.$refs.everything);
       d3.zoom().on("zoom", () => {
         g.attr("transform", d3.event.transform);
       })($e);
     },
-    dragstarted(d) {
+    dragstarted (d) {
       if (!d3.event.active) this.simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
     },
-    dragged(d) {
+    dragged (d) {
       d.fx = d3.event.x;
       d.fy = d3.event.y;
     },
-    dragended(d) {
+    dragended (d) {
       if (!d3.event.active) this.simulation.alphaTarget(0);
       d.fx = d3.event.x;
       d.fy = d3.event.y;
+    },
+    getFillColor (d) {
+      d._color = "#404040";
+      if (d.isVisited) {
+        d._color = this.nodeColors.visited;
+      }
+      if (d.isFavorite) {
+        d._color = this.nodeColors.favorite;
+      }
+      return d._color;
+    },
+    getStrokeColor (d) {
+      let search = d.searches.values().next().value;
+      if (d.search_returned_paper && search && this.searches[search]) {
+        return this.searches[search];
+      }
+      return "white";
+    },
+    getOpacity (d) {
+      return this.selectedSearch.length < 1 || d.searches.has(this.selectedSearch) ? 1 : 0.3;
     }
   },
 
-  computed: {},
+  computed: {
+    ...mapState([
+      'searches',
+      'selectedSearch'
+    ]),
+  },
 
   watch: {
-    netgraph() {
+    netgraph () {
       if (this.graph.nodes.length !== this.netgraph.nodes.length) {
         this.netgraph.nodes.forEach(node => {
           delete node.fx;
@@ -195,7 +204,6 @@ export default {
 
         this.graph.nodes = this.netgraph.nodes;
         this.graph.links = this.netgraph.links;
-
         this.reload();
       } else {
         this.graph.nodes = this.netgraph.nodes;
@@ -203,6 +211,9 @@ export default {
         this.simulation.restart();
       }
       // db.collection('dashboards').doc(firebase.auth().currentUser.email).set(this.graph);
+    },
+    selectedSearch () {
+      this.simulation.restart();
     }
   }
 };
