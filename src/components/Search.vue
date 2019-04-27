@@ -92,9 +92,11 @@ export default {
       let $close = e.target.closest('.search-close');
       let $searchItem = e.target.closest('.search-item');
       if($close) {
-        this.removeSearch($searchItem.innerText);
+        console.log('close');
+        this.removeSearch($searchItem.innerText.trim());
       } else if ($searchItem) {
-        this.selectSearch($searchItem.innerText);
+        console.log('select');
+        this.selectSearch($searchItem.innerText.trim());
       }
     },
     toggleClose () {

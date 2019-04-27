@@ -73,7 +73,7 @@ let mergeByKeys = (keys, source, target) => {
 
 export default new Vuex.Store({
   state: {
-    selectedSearch: '',
+    selectedSearch: "",
     selectedNode: undefined,
     nodeMetaData: {},
     searches: {},
@@ -83,7 +83,7 @@ export default new Vuex.Store({
   },
   actions: {
     initGraph({ commit }, graph) {
-      commit('setGraph', { graph });
+      commit("setGraph", { graph });
     },
     selectNode({ commit }, node) {
       commit("setSelectedNode", { node });
@@ -118,7 +118,10 @@ export default new Vuex.Store({
       }
       commit("startQuerying");
       axios
-        .post("https://rv-harvard-api-stage.herokuapp.com/v1/graph/title", query)
+        .post(
+          "https://rv-harvard-api-stage.herokuapp.com/v1/graph/title",
+          query
+        )
         .then(res => {
           commit("setSearch", { query });
           commit("setNodes", { data: res.data, query: query });
@@ -138,12 +141,12 @@ export default new Vuex.Store({
     }
   },
   mutations: {
-    removeNodes(state, {search}) {
+    removeNodes(state, { search }) {
       let nodes = [...state.nodes];
       let i = nodes.length;
       let nodeMap = {};
 
-      while(i--) {
+      while (i--) {
         let node = nodes[i];
         node.searches.delete(search);
         if (!node.searches.size && !node.isFavorite) {
@@ -155,9 +158,9 @@ export default new Vuex.Store({
       let links = [...state.links];
       i = links.length;
 
-      while(i--) {
+      while (i--) {
         let link = links[i];
-        if ((nodeMap[link.source.id] || nodeMap[link.target.id])) {
+        if (nodeMap[link.source.id] || nodeMap[link.target.id]) {
           links.splice(i, 1);
         }
       }
@@ -165,7 +168,7 @@ export default new Vuex.Store({
       state.nodes = nodes;
       state.links = links;
     },
-    removeSearch(state , {search}) {
+    removeSearch(state, { search }) {
       Vue.delete(state.searches, search);
     },
     startQuerying(state) {
@@ -207,7 +210,7 @@ export default new Vuex.Store({
       state.selectedNode = node.id;
     },
     setSelectedSearch(state, { search }) {
-      state.selectedSearch = state.selectedSearch === search ? '' : search;
+      state.selectedSearch = state.selectedSearch === search ? "" : search;
     },
     setVisited(state, { node }) {
       node.isVisited = true;
