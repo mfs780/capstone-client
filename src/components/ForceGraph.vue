@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapActions } from 'vuex';
 import firebase from 'firebase'
 import { db } from '../main'
 import * as d3 from "d3";
@@ -46,6 +46,9 @@ export default {
   },
 
   methods: {
+    ...mapActions([
+      'setFirebase'
+    ]),
     // load data
     loadData () {
       let height = this.$el.parentElement.offsetHeight;
@@ -82,7 +85,7 @@ export default {
         .data(this.graph.nodes)
         .enter()
         .append("circle")
-        .attr("r", 5)
+        .attr("r", this.getRadius)
         .attr("fill", this.getFillColor)
         .attr("stroke", this.getStrokeColor)
         .call(
@@ -125,9 +128,6 @@ export default {
         .attr("cy", function (d) {
           return d.y;
         })
-        .attr("fill", this.getFillColor)
-        .attr("stroke", this.getStrokeColor)
-        .attr("opacity", this.getOpacity)
         .on("click", d => {
           this.$emit("node-click", d);
         });
@@ -158,8 +158,11 @@ export default {
     },
     dragended (d) {
       if (!d3.event.active) this.simulation.alphaTarget(0);
-      d.fx = d3.event.x;
-      d.fy = d3.event.y;
+      d.fx = null;
+      d.fy = null;
+    },
+    getRadius (d) {
+      return d.search_returned_paper ? 8 : 5;
     },
     getFillColor (d) {
       d._color = "#404040";
@@ -172,14 +175,14 @@ export default {
       return d._color;
     },
     getStrokeColor (d) {
-      let search = d.searches.values().next().value;
+      let search = Object.keys(d.searches)[0];
       if (d.search_returned_paper && search && this.searches[search]) {
         return this.searches[search];
       }
       return "white";
     },
     getOpacity (d) {
-      return this.selectedSearch.length < 1 || d.searches.has(this.selectedSearch) ? 1 : 0.3;
+      return this.selectedSearch.length < 1 || d.searches[this.selectedSearch] ? 1 : 0.3;
     }
   },
 
@@ -192,6 +195,7 @@ export default {
 
   watch: {
     netgraph () {
+      this.setFirebase(this.graph);
       if (this.graph.nodes.length !== this.netgraph.nodes.length) {
         this.netgraph.nodes.forEach(node => {
           delete node.fx;
@@ -204,13 +208,15 @@ export default {
 
         this.graph.nodes = this.netgraph.nodes;
         this.graph.links = this.netgraph.links;
+        this.simulation.restart();
         this.reload();
       } else {
         this.graph.nodes = this.netgraph.nodes;
         this.graph.links = this.netgraph.links;
         this.simulation.restart();
       }
-      // db.collection('dashboards').doc(firebase.auth().currentUser.email).set(this.graph);
+
+      console.log(this.graph);
     },
     selectedSearch () {
       this.simulation.restart();

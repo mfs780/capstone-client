@@ -92,16 +92,18 @@ export default {
       let $close = e.target.closest('.search-close');
       let $searchItem = e.target.closest('.search-item');
       if($close) {
-        this.removeSearch($searchItem.innerText);
+        console.log('close');
+        this.removeSearch($searchItem.innerText.trim());
       } else if ($searchItem) {
-        this.selectSearch($searchItem.innerText);
+        console.log('select');
+        this.selectSearch($searchItem.innerText.trim());
       }
     },
     toggleClose () {
       this.isClosed = !this.isClosed;
     },
     onUpdateQuery () {
-      if (this.query.search.length < 3) {
+      if (this.query.search.length < 3 && this.query.keywords.length < 3) {
         return;
       }
       this.$emit('updateQuery', this.query);
@@ -131,6 +133,7 @@ export default {
     query () {
       return {
         search: this.search,
+        keywords: this.keywords,
         startDate: this.startDate,
         endDate: this.endDate,
         rank: this.rank
