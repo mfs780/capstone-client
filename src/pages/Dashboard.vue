@@ -35,15 +35,15 @@ export default {
     };
   },
   mounted () {
-    // db.collection("dashboards").doc(firebase.auth().currentUser.email).get().then((res) => {
-    //   console.log(res.id);
-    //   console.log(res.data());
-    //   this.initGraph(res.data());
-    // });
+    db.collection("dashboards").doc(firebase.auth().currentUser.email).get().then((res) => {
+      console.log(res.id);
+      console.log(res.data());
+      this.initState(res.data());
+    });
   },
   methods: {
     ...mapActions([
-      'initGraph',
+      'initState',
       'visitNode',
       'favoriteNode',
       'queryMetaData',
@@ -53,6 +53,7 @@ export default {
     onQueryChange (query) {
       let newQuery = {
         title: query.search,
+        keywords: query.keywords,
         min_year: parseInt(query.startDate.split("-")[0]),
         max_year: parseInt(query.endDate.split("-")[0]),
         min_cite: parseInt(query.rank),

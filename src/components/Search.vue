@@ -103,7 +103,7 @@ export default {
       this.isClosed = !this.isClosed;
     },
     onUpdateQuery () {
-      if (this.query.search.length < 3) {
+      if (this.query.search.length < 3 && this.query.keywords.length < 3) {
         return;
       }
       this.$emit('updateQuery', this.query);
@@ -133,6 +133,7 @@ export default {
     query () {
       return {
         search: this.search,
+        keywords: this.keywords,
         startDate: this.startDate,
         endDate: this.endDate,
         rank: this.rank

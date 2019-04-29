@@ -1,6 +1,8 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import axios from "axios";
+import { db } from "../main";
+import firebase from "firebase";
 
 Vue.use(Vuex);
 
@@ -74,7 +76,7 @@ let mergeByKeys = (keys, source, target) => {
 export default new Vuex.Store({
   state: {
     selectedSearch: "",
-    selectedNode: undefined,
+    selectedNode: {},
     nodeMetaData: {},
     searches: {},
     nodes: [],
@@ -82,8 +84,11 @@ export default new Vuex.Store({
     isQuerying: false
   },
   actions: {
-    initGraph({ commit }, graph) {
-      commit("setGraph", { graph });
+    setFirebase({ commit }, graph) {
+      commit("setFirebase", { graph });
+    },
+    initState({ commit }, newState) {
+      commit("initState", { newState });
     },
     selectNode({ commit }, node) {
       commit("setSelectedNode", { node });
@@ -141,6 +146,16 @@ export default new Vuex.Store({
     }
   },
   mutations: {
+    setFirebase(state, { graph }) {
+      let newState = Object.assign({}, state);
+      // newState.nodes = graph.nodes;
+      // newState.links = graph.links;
+      state.isQuerying = false;
+      state.selectedNode = {};
+      db.collection("dashboards")
+        .doc(firebase.auth().currentUser.email)
+        .set(newState);
+    },
     removeNodes(state, { search }) {
       let nodes = [...state.nodes];
       let i = nodes.length;
@@ -148,8 +163,8 @@ export default new Vuex.Store({
 
       while (i--) {
         let node = nodes[i];
-        node.searches.delete(search);
-        if (!node.searches.size && !node.isFavorite) {
+        Vue.delete(node.searches, search);
+        if (!Object.keys(node.searches).length && !node.isFavorite) {
           nodeMap[node.id] = true;
           nodes.splice(i, 1);
         }
@@ -177,9 +192,8 @@ export default new Vuex.Store({
     stopQuerying(state) {
       state.isQuerying = false;
     },
-    setGraph(state, { graph }) {
-      state.nodes = graph.nodes;
-      state.links = graph.links;
+    initState(state, { newState }) {
+      Object.assign(state, newState);
     },
     setMetaData(state, { data }) {
       if (!data) {
@@ -191,8 +205,8 @@ export default new Vuex.Store({
     },
     setNodes(state, { data, query }) {
       data.graph.nodes.forEach(node => {
-        node.searches = node.searches || new Set();
-        node.searches.add(query.title);
+        node.searches = node.searches || {};
+        node.searches[query.title] = true;
       });
 
       state.nodes = mergeByKeys(["id"], state.nodes, data.graph.nodes);
