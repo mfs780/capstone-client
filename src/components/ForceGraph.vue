@@ -35,7 +35,7 @@ export default {
       links: [],
       simulation: undefined,
       nodeColors: {
-        visited: "blue",
+        visited: "white",
         favorite: "yellow"
       }
     };
@@ -67,7 +67,7 @@ export default {
         .force("link", link_force)
         .force("charge", charge_force)
         .force("center", center_force)
-        .force("collision", d3.forceCollide().radius(5));
+        .force("collision", d3.forceCollide().radius(10));
 
       let link = d3
         .select(this.$refs.links)
@@ -100,9 +100,17 @@ export default {
         return d.id;
       });
 
-      this.simulation.nodes(this.graph.nodes).on("tick", () => this.ticked(link, node));
+      this.simulation.nodes(this.graph.nodes).on("tick", () => this.ticked(link, node)).stop();
 
       this.simulation.force("link").links(this.graph.links);
+
+      d3.range(100).forEach(() => this.simulation.tick());
+      this.ticked(link, node);
+
+      this.simulation
+        .force("link", null)
+        .force("charge", null)
+        .force("center", null)
 
       this.initZoomOn(d3.select(this.$refs.svg));
     },
@@ -128,6 +136,9 @@ export default {
         .attr("cy", function (d) {
           return d.y;
         })
+        .attr("fill", this.getFillColor)
+        .attr("stroke", this.getStrokeColor)
+        .attr("opacity", this.getOpacity)
         .on("click", d => {
           this.$emit("node-click", d);
         });
@@ -162,6 +173,7 @@ export default {
       d.fy = null;
     },
     getRadius (d) {
+      // return Math.min(d.rank / (this.max - this.min) * 5 + 5);
       return d.search_returned_paper ? 8 : 5;
     },
     getFillColor (d) {
@@ -195,9 +207,10 @@ export default {
 
   watch: {
     netgraph () {
-      this.setFirebase(this.graph);
       if (this.graph.nodes.length !== this.netgraph.nodes.length) {
         this.netgraph.nodes.forEach(node => {
+          // this.max = Math.max(this.max, node.rank);
+          // this.min = Math.min(this.min, node.rank);
           delete node.fx;
           delete node.fy;
           delete node.vx;
@@ -215,8 +228,7 @@ export default {
         this.graph.links = this.netgraph.links;
         this.simulation.restart();
       }
-
-      console.log(this.graph);
+      this.setFirebase();
     },
     selectedSearch () {
       this.simulation.restart();

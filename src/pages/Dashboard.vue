@@ -36,8 +36,6 @@ export default {
   },
   mounted () {
     db.collection("dashboards").doc(firebase.auth().currentUser.email).get().then((res) => {
-      console.log(res.id);
-      console.log(res.data());
       this.initState(res.data());
     });
   },

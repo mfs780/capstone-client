@@ -60,6 +60,11 @@
         </div>
       </div>
     </div>
+    <button :disabled="isQuerying"
+            class="clear-btn"
+            @click="onClearData">
+      <span>CLEAR ALL DATA</span>
+    </button>
   </div>
 </template>
 
@@ -74,16 +79,17 @@ export default {
       isClosed: false,
       updateTimeout: null,
       keywords: '',
-      search: 'Memory Dysfunction',
-      startDate: "2010-01-01",
+      search: 'vitamin d',
+      startDate: "2018-01-01",
       endDate: this.currentDate(),
-      rank: 2
+      rank: 5
     };
   },
   methods: {
     ...mapActions([
       'selectSearch',
-      'removeSearch'
+      'removeSearch',
+      'clearFirebase'
     ]),
     isSelected (searchTerm) {
       return searchTerm === this.selectedSearch
@@ -91,16 +97,17 @@ export default {
     clickSearch (e) {
       let $close = e.target.closest('.search-close');
       let $searchItem = e.target.closest('.search-item');
-      if($close) {
-        console.log('close');
+      if ($close) {
         this.removeSearch($searchItem.innerText.trim());
       } else if ($searchItem) {
-        console.log('select');
         this.selectSearch($searchItem.innerText.trim());
       }
     },
     toggleClose () {
       this.isClosed = !this.isClosed;
+    },
+    onClearData () {
+      this.clearFirebase();
     },
     onUpdateQuery () {
       if (this.query.search.length < 3 && this.query.keywords.length < 3) {
@@ -148,20 +155,22 @@ export default {
 
 <style scoped>
 .closed {
-  transform: translateX(-370px);
+  transform: translateX(-390px);
 }
 
 .panel {
+  display: flex;
+  flex-direction: column;
   position: absolute;
   width: 370px;
   height: 100%;
   background-color: #404040;
-  display: block;
   text-align: left;
   padding: 0 30px 0 0px;
   color: #e6e6e6;
   overflow: auto;
   transition-duration: 500ms;
+  padding-left: 20px;
 }
 
 .panel-content {
@@ -180,12 +189,7 @@ h1 {
   display: flex;
   flex-direction: column;
   flex: 1;
-  margin: 0 10px;
   align-items: flex-start;
-}
-
-.filters > div {
-  margin: 0 10px;
 }
 
 .search-container {
@@ -256,5 +260,27 @@ input {
   display: inline-block;
   position: absolute;
   right: 1px;
+}
+
+.search-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-bottom: 25px;
+  overflow-y: auto;
+}
+
+.clear-btn {
+  position: relative;
+  bottom: 15px;
+  margin-top: 10px;
+  text-align: center;
+  outline: none;
+  background-color: black;
+  color: #e6e6e6;
+  font-weight: 900;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
 }
 </style>

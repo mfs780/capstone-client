@@ -3,6 +3,7 @@ import Vuex from "vuex";
 import axios from "axios";
 import { db } from "../main";
 import firebase from "firebase";
+import { strictEqual } from "assert";
 
 Vue.use(Vuex);
 
@@ -11,13 +12,13 @@ let randomColor = (() => {
     var golden_ratio_conjugate = 0.618033988749895;
     var h = Math.random();
 
-    var hslToRgb = function(h, s, l) {
+    var hslToRgb = function (h, s, l) {
       var r, g, b;
 
       if (s == 0) {
         r = g = b = l; // achromatic
       } else {
-        function hue2rgb(p, q, t) {
+        function hue2rgb (p, q, t) {
           if (t < 0) t += 1;
           if (t > 1) t -= 1;
           if (t < 1 / 6) return p + (q - p) * 6 * t;
@@ -41,7 +42,7 @@ let randomColor = (() => {
       );
     };
 
-    return function() {
+    return function () {
       h += golden_ratio_conjugate;
       h %= 1;
       return hslToRgb(h, 0.5, 0.6);
@@ -73,6 +74,12 @@ let mergeByKeys = (keys, source, target) => {
   return src;
 };
 
+let cloneObj = function (obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+let pollInterval;
+
 export default new Vuex.Store({
   state: {
     selectedSearch: "",
@@ -81,26 +88,30 @@ export default new Vuex.Store({
     searches: {},
     nodes: [],
     links: [],
-    isQuerying: false
+    isQuerying: false,
+    tasks: []
   },
   actions: {
-    setFirebase({ commit }, graph) {
-      commit("setFirebase", { graph });
+    clearFirebase ({ commit }, ) {
+      commit("clearFirebase");
     },
-    initState({ commit }, newState) {
+    setFirebase ({ commit }, ) {
+      commit("setFirebase");
+    },
+    initState ({ commit }, newState) {
       commit("initState", { newState });
     },
-    selectNode({ commit }, node) {
+    selectNode ({ commit }, node) {
       commit("setSelectedNode", { node });
     },
-    selectSearch({ commit }, search) {
+    selectSearch ({ commit }, search) {
       commit("setSelectedSearch", { search });
     },
-    removeSearch({ commit }, search) {
+    removeSearch ({ commit }, search) {
       commit("removeNodes", { search });
       commit("removeSearch", { search });
     },
-    queryMetaData({ state, commit }, id) {
+    queryMetaData ({ state, commit }, id) {
       if (state.isQuerying) {
         return;
       }
@@ -117,7 +128,50 @@ export default new Vuex.Store({
           commit("stopQuerying");
         });
     },
-    queryNodes({ state, commit }, query) {
+    queryTaskResult ({ state, commit }) {
+      let task = state.tasks.pop();
+      axios
+        .get(
+          `https://rv-harvard-api-stage.herokuapp.com/v1/graph/result/${task.taskId}`
+        )
+        .then(res => {
+          console.info('Task Result', res);
+
+          commit("setSearch", { query: task.query });
+          commit("setNodes", { data: res.data, query: task.query });
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    },
+    queryTaskStatus ({ state, dispatch, commit }) {
+      if (!state.tasks.length) {
+        return;
+      }
+
+      pollInterval = setInterval(() => {
+        if (!state.tasks.length) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        axios
+          .get(
+            `https://rv-harvard-api-stage.herokuapp.com/v1/graph/result/${state.tasks[0].taskId}/status`
+          )
+          .then(res => {
+            console.info('Task Status', res);
+            if (res.data.status === "finished") {
+              dispatch('queryTaskResult');
+            }
+          })
+          .catch(err => {
+            console.error(err);
+          });
+
+      }, 5000);
+    },
+    queryNodes ({ state, dispatch, commit }, query) {
       if (state.isQuerying) {
         return;
       }
@@ -128,8 +182,14 @@ export default new Vuex.Store({
           query
         )
         .then(res => {
-          commit("setSearch", { query });
-          commit("setNodes", { data: res.data, query: query });
+          console.info('Title Status:', res);
+          if (!res.data.graph) {
+            commit("setTask", { taskId: res.data.task_id, query: query });
+            dispatch("queryTaskStatus");
+          } else {
+            commit("setSearch", { query });
+            commit("setNodes", { data: res.data, query: query });
+          }
           commit("stopQuerying");
         })
         .catch(err => {
@@ -138,25 +198,45 @@ export default new Vuex.Store({
           commit("stopQuerying");
         });
     },
-    visitNode({ commit }, node) {
+    visitNode ({ commit }, node) {
       commit("setVisited", { node });
     },
-    favoriteNode({ commit }, node) {
+    favoriteNode ({ commit }, node) {
       commit("toggleFavorited", { node });
     }
   },
   mutations: {
-    setFirebase(state, { graph }) {
-      let newState = Object.assign({}, state);
-      // newState.nodes = graph.nodes;
-      // newState.links = graph.links;
-      state.isQuerying = false;
-      state.selectedNode = {};
+    setTask (state, { taskId, query }) {
+      state.tasks.push({ taskId, query });
+    },
+    clearFirebase (state) {
+      let newState = {
+        links: [],
+        nodes: [],
+        searches: {}
+      };
+
+      db.collection("dashboards")
+        .doc(firebase.auth().currentUser.email)
+        .set(newState);
+
+      state.nodes = [];
+      state.links = [];
+      state.searches = {};
+    },
+    setFirebase (state) {
+      let newState = {
+        links: state.links,
+        nodes: state.nodes,
+        searches: state.searches
+      };
+
+      console.log('Save State', newState);
       db.collection("dashboards")
         .doc(firebase.auth().currentUser.email)
         .set(newState);
     },
-    removeNodes(state, { search }) {
+    removeNodes (state, { search }) {
       let nodes = [...state.nodes];
       let i = nodes.length;
       let nodeMap = {};
@@ -183,19 +263,20 @@ export default new Vuex.Store({
       state.nodes = nodes;
       state.links = links;
     },
-    removeSearch(state, { search }) {
+    removeSearch (state, { search }) {
       Vue.delete(state.searches, search);
     },
-    startQuerying(state) {
+    startQuerying (state) {
       state.isQuerying = true;
     },
-    stopQuerying(state) {
+    stopQuerying (state) {
       state.isQuerying = false;
     },
-    initState(state, { newState }) {
+    initState (state, { newState }) {
+      console.log('Initialize State', newState);
       Object.assign(state, newState);
     },
-    setMetaData(state, { data }) {
+    setMetaData (state, { data }) {
       if (!data) {
         state.nodeMetaData = { msg: "No Metadata Available" };
         return;
@@ -203,7 +284,7 @@ export default new Vuex.Store({
 
       state.nodeMetaData = data.article[0];
     },
-    setNodes(state, { data, query }) {
+    setNodes (state, { data, query }) {
       data.graph.nodes.forEach(node => {
         node.searches = node.searches || {};
         node.searches[query.title] = true;
@@ -216,17 +297,17 @@ export default new Vuex.Store({
         data.graph.links
       );
     },
-    setSearch(state, { query }) {
+    setSearch (state, { query }) {
       state.searches[query.title] =
         state.searches[query.title] || randomColor();
     },
-    setSelectedNode(state, { node }) {
+    setSelectedNode (state, { node }) {
       state.selectedNode = node.id;
     },
-    setSelectedSearch(state, { search }) {
+    setSelectedSearch (state, { search }) {
       state.selectedSearch = state.selectedSearch === search ? "" : search;
     },
-    setVisited(state, { node }) {
+    setVisited (state, { node }) {
       node.isVisited = true;
       let index = state.nodes.findIndex(n => {
         return n.id == node.id;
@@ -236,7 +317,7 @@ export default new Vuex.Store({
         state.nodes = [...state.nodes];
       }
     },
-    toggleFavorited(state, { node }) {
+    toggleFavorited (state, { node }) {
       node.isFavorite = !node.isFavorite;
       let index = state.nodes.findIndex(n => {
         return n.id == node.id;
@@ -250,8 +331,8 @@ export default new Vuex.Store({
   getters: {
     graph: state => {
       return {
-        nodes: state.nodes,
-        links: state.links
+        nodes: cloneObj(state.nodes),
+        links: cloneObj(state.links)
       };
     },
     getNodeById: state => id => {
