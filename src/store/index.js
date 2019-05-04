@@ -237,7 +237,7 @@ export default new Vuex.Store({
         .set(newState);
     },
     removeNodes (state, { search }) {
-      let nodes = [...state.nodes];
+      let nodes = cloneObj(state.nodes);
       let i = nodes.length;
       let nodeMap = {};
 
@@ -250,12 +250,12 @@ export default new Vuex.Store({
         }
       }
 
-      let links = [...state.links];
+      let links = cloneObj(state.links);
       i = links.length;
 
       while (i--) {
         let link = links[i];
-        if (nodeMap[link.source.id] || nodeMap[link.target.id]) {
+        if (nodeMap[link.source] || nodeMap[link.target]) {
           links.splice(i, 1);
         }
       }
