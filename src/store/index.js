@@ -110,8 +110,7 @@ export default new Vuex.Store({
       commit("clearFirebase");
     },
     setFirebase ({ commit }, ) {
-      console.log('saving');
-      // commit("setFirebase");
+      commit("setFirebase");
     },
     initState ({ commit }, newState) {
       commit("initState", { newState });
@@ -214,10 +213,14 @@ export default new Vuex.Store({
         });
     },
     visitNode ({ commit }, node) {
-      commit("setVisited", { node });
+      if (!node.isVisited) {
+        commit("setVisited", { node });
+        commit("setFirebase");
+      }
     },
     favoriteNode ({ commit }, node) {
       commit("toggleFavorited", { node });
+      commit("setFirebase");
     }
   },
   mutations: {
@@ -333,7 +336,6 @@ export default new Vuex.Store({
       });
       if (index !== -1) {
         state.nodes[index] = node;
-        state.nodes = [...state.nodes];
       }
     },
     toggleFavorited (state, { node }) {
@@ -343,16 +345,15 @@ export default new Vuex.Store({
       });
       if (index !== -1) {
         state.nodes[index] = node;
-        state.nodes = [...state.nodes];
       }
     }
   },
   getters: {
     graph: state => {
-      return {
-        nodes: cloneObj(state.nodes),
-        links: cloneObj(state.links)
-      };
+      return cloneObj({
+        nodes: state.nodes,
+        links: state.links
+      });
     },
     getNodeById: state => id => {
       return state.nodes.find(node => node.id === id);

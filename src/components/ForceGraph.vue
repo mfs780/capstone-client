@@ -207,6 +207,7 @@ export default {
 
   watch: {
     netgraph () {
+      console.log('watch');
       if (this.graph.nodes.length !== this.netgraph.nodes.length) {
         this.netgraph.nodes.forEach(node => {
           // this.max = Math.max(this.max, node.rank);
@@ -223,12 +224,11 @@ export default {
         this.graph.links = this.netgraph.links;
         this.simulation.restart();
         this.reload();
+        this.setFirebase();
       } else {
         this.graph.nodes = this.netgraph.nodes;
         this.graph.links = this.netgraph.links;
-        this.simulation.restart();
       }
-      this.setFirebase();
     },
     selectedSearch () {
       this.simulation.restart();
