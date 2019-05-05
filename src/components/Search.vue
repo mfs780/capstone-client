@@ -54,7 +54,7 @@
            :key="key">
         <div class="search-color"
              :style="{ backgroundColor: value }" />
-        {{key}}
+          {{key}}
         <div class="search-close">
           <font-awesome-icon icon="times-circle" />
         </div>
@@ -235,13 +235,15 @@ input {
 }
 
 .search-item {
-  height: 15px;
-  border-radius: 50%;
+  white-space: nowrap;
   color: #e6e6e6;
   margin: 2px;
   margin-bottom: 10px;
+  text-overflow: ellipsis;
+  padding-right: 30px;
   opacity: 0.6;
   position: relative;
+  overflow: hidden;
 }
 
 .selected {

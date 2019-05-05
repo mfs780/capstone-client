@@ -60,6 +60,9 @@ let mergeByKeys = (keys, source, target) => {
         return tE[key] == sE[key];
       });
       if (isMatch) {
+        if (tE.searches) {
+          tE.searches = Object.assign(tE.searches, src[index].searches || {});
+        }
         src[index] = Object.assign(src[index], tE);
         return true;
       }
@@ -124,6 +127,7 @@ export default new Vuex.Store({
     removeSearch ({ commit }, search) {
       commit("removeNodes", { search });
       commit("removeSearch", { search });
+      commit("setFirebase");
     },
     queryMetaData ({ state, commit }, id) {
       if (state.isQuerying) {

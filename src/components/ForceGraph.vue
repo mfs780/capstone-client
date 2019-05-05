@@ -228,6 +228,7 @@ export default {
       } else {
         this.graph.nodes = this.netgraph.nodes;
         this.graph.links = this.netgraph.links;
+        this.reload();
       }
     },
     selectedSearch () {
