@@ -76,7 +76,21 @@ let mergeByKeys = (keys, source, target) => {
 
 let cloneObj = function (obj) {
   return JSON.parse(JSON.stringify(obj));
-}
+};
+
+let getQueryKey = function (query) {
+  let key = query.title.trim();
+  let keywords = query.keywords.trim();
+
+  if (key.length && keywords.length) {
+    key += ' | ';
+  }
+
+  if (keywords.length) {
+    key += `[${keywords}]`;
+  }
+  return key;
+};
 
 let pollInterval;
 
@@ -96,7 +110,8 @@ export default new Vuex.Store({
       commit("clearFirebase");
     },
     setFirebase ({ commit }, ) {
-      commit("setFirebase");
+      console.log('saving');
+      // commit("setFirebase");
     },
     initState ({ commit }, newState) {
       commit("initState", { newState });
@@ -285,9 +300,11 @@ export default new Vuex.Store({
       state.nodeMetaData = data.article[0];
     },
     setNodes (state, { data, query }) {
+      let key = getQueryKey(query);
+
       data.graph.nodes.forEach(node => {
         node.searches = node.searches || {};
-        node.searches[query.title] = true;
+        node.searches[key] = true;
       });
 
       state.nodes = mergeByKeys(["id"], state.nodes, data.graph.nodes);
@@ -298,8 +315,10 @@ export default new Vuex.Store({
       );
     },
     setSearch (state, { query }) {
-      state.searches[query.title] =
-        state.searches[query.title] || randomColor();
+      let key = getQueryKey(query);
+
+      state.searches[key] =
+        state.searches[key] || randomColor();
     },
     setSelectedNode (state, { node }) {
       state.selectedNode = node.id;
