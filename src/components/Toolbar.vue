@@ -7,12 +7,11 @@
       Visual Research
     </div>
     <div class="panel-actions">
-      <div class="tutorial btn"
-           @click="open-tutorial">
+      <a class="tutorial btn" href="https://drive.google.com/open?id=1KnKhobPAJh9W-ldKg0SmRCwQy3RdwmBT" target="_blank">
         Tutorial
         <font-awesome-icon class="tut-icon"
                            icon="question-circle" />
-      </div>
+      </a>
       <div class="vertical"/>
       <div class="logout-btn btn"
            @click="logout">
@@ -76,6 +75,10 @@ export default {
   align-items: center;
   padding: 0 5px;
   font-size: 20px;
+  outline: none;
+  text-decoration: none;
+  color: #404040;
+
 }
 
 .tut-icon {
