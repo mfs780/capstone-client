@@ -44,7 +44,7 @@
     },
     methods: {
       login () {
-        firebase.auth().signInWithEmailAndPassword(this.email, this.password).then((user) => {
+        firebase.auth().signInWithEmailAndPassword(this.email, this.password).then(() => {
           this.$router.replace('/comics')
         }).catch((err) => {
           alert(err.message)

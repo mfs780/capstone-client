@@ -49,7 +49,7 @@ export default {
   },
   methods: {
     signup () {
-      firebase.auth().createUserWithEmailAndPassword(this.email, this.password).then((user) => {
+      firebase.auth().createUserWithEmailAndPassword(this.email, this.password).then(() => {
         this.$router.replace('/login')
       }).catch((err) => {
         alert(err.message)

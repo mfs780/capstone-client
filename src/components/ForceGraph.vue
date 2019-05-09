@@ -13,8 +13,6 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
-import firebase from 'firebase'
-import { db } from '../main'
 import * as d3 from "d3";
 
 export default {
@@ -178,6 +176,9 @@ export default {
     },
     getFillColor (d) {
       d._color = "#404040";
+      if (d.id === this.selectedNode) {
+        return 'purple';
+      }
       if (d.isVisited) {
         d._color = this.nodeColors.visited;
       }
@@ -201,7 +202,8 @@ export default {
   computed: {
     ...mapState([
       'searches',
-      'selectedSearch'
+      'selectedSearch',
+      'selectedNode'
     ]),
   },
 

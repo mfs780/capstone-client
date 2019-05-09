@@ -13,8 +13,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions, mapState } from 'vuex';
-import axios from "axios";
+import { mapGetters, mapActions } from 'vuex';
 import ForceGraph from "../components/ForceGraph.vue";
 import Panel from "../components/Panel.vue";
 import Search from "../components/Search.vue";

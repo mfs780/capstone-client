@@ -1,15 +1,16 @@
-import Vue from "vue";
-import Router from "vue-router";
-import firebase from "firebase";
+import Vue from 'vue'
+import Router from 'vue-router'
+import firebase from 'firebase'
+import Dashboard from "./views/Dashboard";
+import Login from "./views/Login";
+import SignUp from "./views/SignUp";
+import NotFound from "./views/NotFound";
 
-import Dashboard from "../pages/Dashboard";
-import Login from "../pages/Login";
-import SignUp from "../pages/SignUp";
-import NotFound from "../pages/NotFound";
-
-Vue.use(Router);
+Vue.use(Router)
 
 let router = new Router({
+  mode: 'history',
+  base: process.env.BASE_URL,
   routes: [
     {
       path: "/",
@@ -39,7 +40,7 @@ let router = new Router({
       component: NotFound
     }
   ]
-});
+})
 
 router.beforeEach((to, from, next) => {
   let currentUser = firebase.auth().currentUser;

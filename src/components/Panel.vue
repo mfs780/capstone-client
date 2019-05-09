@@ -22,8 +22,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions, mapState } from 'vuex';
-import firebase from "firebase";
+import { mapGetters, mapState } from 'vuex';
 
 export default {
   name: "Panel",
