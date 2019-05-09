@@ -24,12 +24,7 @@ import "firebase/firestore";
 Vue.use(VueFire);
 
 var config = {
-  apiKey: "AIzaSyABZAEyNBTjC9CtxnfyGNZ6OMfJoaMK8sY",
-  authDomain: "harvard-capstone.firebaseapp.com",
-  databaseURL: "https://harvard-capstone.firebaseio.com",
-  projectId: "harvard-capstone",
-  storageBucket: "harvard-capstone.appspot.com",
-  messagingSenderId: "986064499697"
+  // REPLACE CONFIG FROM FIREBASE
 };
 firebase.initializeApp(config);
 
